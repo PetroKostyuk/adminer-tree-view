@@ -13,7 +13,7 @@ nezávislé na použité databázi, či vázané na konkrétní RDBMS.
 
 */
 
-class AdmirerTreeViewer extends Adminer {
+class AdminerTreeViewer extends Adminer {
 
     function navigation($ve)
     {

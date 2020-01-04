@@ -1,5 +1,15 @@
 <?php
 
+function generateScript(): void
+{
+    $phpScript = file_get_contents('./src/index.php');
+    $jsScript = file_get_contents('./src/script.js');
+
+    file_put_contents('./plugins/AdminerTreeViewer.php', str_replace('<<<%SCRIPT_JS%>>>', str_replace('"', '\\"', $jsScript), $phpScript));
+
+    echo "generated script at " . date('H:i:s') . "\n";
+}
+
 function getFiles($dir): array
 {
     $files = [];
@@ -11,16 +21,6 @@ function getFiles($dir): array
     }
 
     return $files;
-}
-
-function generateScript(): void
-{
-    $phpScript = file_get_contents('./src/index.php');
-    $jsScript = file_get_contents('./src/script.js');
-
-    file_put_contents('./plugins/AdmirerTreeViewer.php', str_replace('<<<%SCRIPT_JS%>>>', str_replace('"', '\\"', $jsScript), $phpScript));
-
-    echo "generated script at " . date('H:i:s') . "\n";
 }
 
 function getDirectoryHash($dir)

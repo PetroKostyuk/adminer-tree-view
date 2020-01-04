@@ -2,7 +2,7 @@
 
 function generateScript(): void
 {
-    $phpScript = file_get_contents('./src/index.php');
+    $phpScript = file_get_contents('./src/AdminerTreeViewer.php');
     $jsScript = file_get_contents('./src/script.js');
 
     file_put_contents('./plugins/AdminerTreeViewer.php', str_replace('<<<%SCRIPT_JS%>>>', str_replace('"', '\\"', $jsScript), $phpScript));

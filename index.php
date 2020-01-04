@@ -49,15 +49,16 @@ function AdminerAjaxConnector(connectionUsername, connectionDb) {
         instance._ajaxRequest(requestUrl, function(pageHtml){
             var tableHtml = instance._getTableFromSelectionHtml(pageHtml);
 
-            var foreignKeysMatch = tableHtml.match(/<meta name=\"reverse-foreign-keys\" content=\"(.+)\"\/>/);
-            var reverseForeignKeys = JSON.parse(foreignKeysMatch[1]);
+            var foreignKeysMatch = tableHtml.match(/<meta name=\"foreign-keys\" content=\"(.+)\"\/>/);
+            var foreignKeys = JSON.parse(foreignKeysMatch[1]);
+            console.log(foreignKeys);
             tableHtml = tableHtml.replace(foreignKeysMatch[0], '');
 
             var tableElement = document.createElement('table');
             tableElement.innerHTML = tableHtml;
 
             var selectionData = instance._extractDataFromTableElement(tableElement);
-            selectionData = instance._addForeignKeysToTableData(selectionQuery.tableName, selectionData, reverseForeignKeys);
+            selectionData = instance._addForeignKeysToTableData(selectionQuery.tableName, selectionData, foreignKeys);
 
             callback(selectionData);
         }, false);
@@ -105,35 +106,27 @@ function AdminerAjaxConnector(connectionUsername, connectionDb) {
         return selectionData;
     };
 
-    instance._addForeignKeysToTableData = function (tableName, selectionData, reverseForeignKeys) {
+    instance._addForeignKeysToTableData = function (tableName, selectionData, foreignKeys) {
 
-        for (var prop in reverseForeignKeys) {
-            if (Object.prototype.hasOwnProperty.call(reverseForeignKeys, prop)) {
-                var foreignKeysForTable = reverseForeignKeys[prop];
+        for (var i = 0; i < foreignKeys.length; i++) {
+            var foreignKey = foreignKeys[i];
 
-                for (var i = 0; i < foreignKeysForTable.length; i++) {
-                    var foreignKey = foreignKeysForTable[i];
+            if (foreignKey.sourceTable === tableName) {
+                for (var j = 0; j < foreignKey.sourceColumns.length; j++) {
+                    selectionData.directForeignKeys[foreignKey.sourceColumns[j]] = foreignKey;
+                }
+            }
 
-                    if (foreignKey.sourceTable === tableName) {
-                        for (var j = 0; j < foreignKey.sourceColumns.length; j++) {
-                            selectionData.directForeignKeys[foreignKey.sourceColumns[j]] = foreignKey;
-                        }
+            if (foreignKey.targetTable === tableName) {
+                for (var j = 0; j < foreignKey.targetColumns.length; j++) {
+                    if (selectionData.reverseForeignKeys[foreignKey.targetColumns[j]] === undefined) {
+                        selectionData.reverseForeignKeys[foreignKey.targetColumns[j]] = [];
                     }
-
-                    if (foreignKey.targetTable === tableName) {
-                        for (var j = 0; j < foreignKey.targetColumns.length; j++) {
-                            if (selectionData.reverseForeignKeys[foreignKey.targetColumns[j]] === undefined) {
-                                selectionData.reverseForeignKeys[foreignKey.targetColumns[j]] = [];
-                            }
-                            selectionData.reverseForeignKeys[foreignKey.targetColumns[j]].push(foreignKey);
-                        }
-                    }
+                    selectionData.reverseForeignKeys[foreignKey.targetColumns[j]].push(foreignKey);
                 }
             }
         }
 
-
-        console.log(selectionData);
         return selectionData;
     };
 
@@ -461,32 +454,23 @@ function AdminerTreeView() {
 
         function rowDescriptions($rows, $foreignKeys) {
 
-            $reverseForeignKeys = $this->getReverseForeignKeyMap();
-            $json = json_encode($reverseForeignKeys);
-            echo '<meta name="reverse-foreign-keys" content="' . $json . '"/>';
+            $foreignKeysList = $this->getForeignKeysList();
+            $foreignKeysJson = json_encode($foreignKeysList);
+
+            // echo meta tag at the beginning of selection table for use in JS
+            echo '<meta name="foreign-keys" content="' . $foreignKeysJson . '"/>';
 
             return $rows;
         }
 
-//        function backwardKeysPrint($backwardKeys, $row) {
-//
-//            echo '<meta name="foreign-keys-json" content="' . $json . '" />';
-//        }
-
-        private function getReverseForeignKeyMap() {
+        private function getForeignKeysList() {
             $tables = array_column(table_status('', true), 'Name');
-            $reverseForeignKeys = [];
+            $foreignKeysList = [];
 
             foreach ($tables as $table) {
-                $directForeignKeys = $this->foreignKeys($table);
+                foreach ($this->foreignKeys($table) as $foreignKey) {
 
-                foreach ($directForeignKeys as $foreignKey) {
-
-                    if (isset($reverseForeignKeys[$foreignKey['table']]) === false) {
-                        $reverseForeignKeys[$foreignKey['table']] = [];
-                    }
-
-                    $reverseForeignKeys[$foreignKey['table']][] = [
+                    $foreignKeysList[] = [
                         'sourceTable' => $table,
                         'sourceColumns' => $foreignKey['source'],
                         'targetTable' => $foreignKey['table'],
@@ -495,7 +479,7 @@ function AdminerTreeView() {
                 }
             }
 
-            return $reverseForeignKeys;
+            return $foreignKeysList;
         }
 
     }

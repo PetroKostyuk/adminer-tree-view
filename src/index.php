@@ -35,32 +35,23 @@ function adminer_object() {
 
         function rowDescriptions($rows, $foreignKeys) {
 
-            $reverseForeignKeys = $this->getReverseForeignKeyMap();
-            $json = json_encode($reverseForeignKeys);
-            echo '<meta name="reverse-foreign-keys" content="' . $json . '"/>';
+            $foreignKeysList = $this->getForeignKeysList();
+            $foreignKeysJson = json_encode($foreignKeysList);
+
+            // echo meta tag at the beginning of selection table for use in JS
+            echo '<meta name="foreign-keys" content="' . $foreignKeysJson . '"/>';
 
             return $rows;
         }
 
-//        function backwardKeysPrint($backwardKeys, $row) {
-//
-//            echo '<meta name="foreign-keys-json" content="' . $json . '" />';
-//        }
-
-        private function getReverseForeignKeyMap() {
+        private function getForeignKeysList() {
             $tables = array_column(table_status('', true), 'Name');
-            $reverseForeignKeys = [];
+            $foreignKeysList = [];
 
             foreach ($tables as $table) {
-                $directForeignKeys = $this->foreignKeys($table);
+                foreach ($this->foreignKeys($table) as $foreignKey) {
 
-                foreach ($directForeignKeys as $foreignKey) {
-
-                    if (isset($reverseForeignKeys[$foreignKey['table']]) === false) {
-                        $reverseForeignKeys[$foreignKey['table']] = [];
-                    }
-
-                    $reverseForeignKeys[$foreignKey['table']][] = [
+                    $foreignKeysList[] = [
                         'sourceTable' => $table,
                         'sourceColumns' => $foreignKey['source'],
                         'targetTable' => $foreignKey['table'],
@@ -69,7 +60,7 @@ function adminer_object() {
                 }
             }
 
-            return $reverseForeignKeys;
+            return $foreignKeysList;
         }
 
     }

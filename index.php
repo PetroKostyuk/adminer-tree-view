@@ -30,10 +30,10 @@ function adminer_object() {
                 echo script("
 function SelectionQuery() {
     this.tableName = '';
-    this.whereConditions = '';
+    this.whereConditions = {};
 }
 
-function Selection() {
+function SelectionData() {
     this.headers = [];
     this.body = [];
     this.directForeignKeys = {};
@@ -43,10 +43,10 @@ function Selection() {
 function AdminerAjaxConnector(connectionUsername, connectionDb) {
     var instance = this;
 
-    instance.getSelectionData = function(tableName, whereConditionsObject, callback) {
-        var requestUrl = instance.urlForTableSelection(tableName, whereConditionsObject);
+    instance.getSelectionData = function(selectionQuery, callback) {
+        var requestUrl = instance.urlFromSelectionQuery(selectionQuery);
 
-        instance.ajaxRequest(requestUrl, function(pageHtml){
+        instance._ajaxRequest(requestUrl, function(pageHtml){
             var tableHtml = instance._getTableFromSelectionHtml(pageHtml);
 
             var foreignKeysMatch = tableHtml.match(/<meta name=\"reverse-foreign-keys\" content=\"(.+)\"\/>/);
@@ -57,7 +57,7 @@ function AdminerAjaxConnector(connectionUsername, connectionDb) {
             tableElement.innerHTML = tableHtml;
 
             var selectionData = instance._extractDataFromTableElement(tableElement);
-            selectionData = instance._addForeignKeysToTableData(tableName, selectionData, reverseForeignKeys);
+            selectionData = instance._addForeignKeysToTableData(selectionQuery.tableName, selectionData, reverseForeignKeys);
 
             callback(selectionData);
         }, false);
@@ -84,7 +84,7 @@ function AdminerAjaxConnector(connectionUsername, connectionDb) {
     };
 
     instance._extractDataFromTableElement = function (tableElement) {
-        var selectionData = new Selection();
+        var selectionData = new SelectionData();
 
         tableElement.querySelectorAll('th > a').forEach(function(th){
             selectionData.headers.push(th.innerText);
@@ -173,10 +173,11 @@ function AdminerAjaxConnector(connectionUsername, connectionDb) {
                     link.innerText = tableData.body[i][tableData.headers[j]];
                     link.className = 'direct-foreign-key';
 
-                    var whereConditions = {};
-                    whereConditions[foreignKey.targetColumns[0]] = tableData.body[i][foreignKey.sourceColumns[0]];
+                    var selectionQuery = new SelectionQuery();
+                    selectionQuery.tableName = foreignKey.targetTable;
+                    selectionQuery.whereConditions[foreignKey.targetColumns[0]] = tableData.body[i][foreignKey.sourceColumns[0]];
 
-                    link.href = instance.urlForTableSelection(foreignKey.targetTable, whereConditions);
+                    link.href = instance.urlFromSelectionQuery(selectionQuery);
 
                 } else {
                     td.innerText = tableData.body[i][tableData.headers[j]];
@@ -209,10 +210,11 @@ function AdminerAjaxConnector(connectionUsername, connectionDb) {
                         link.innerText = reverseForeignKeys[k].sourceTable + '.' + reverseForeignKeys[k].sourceColumns[0]; //tableData.body[i][tableData.headers[j]];
                         link.className = 'reverse-foreign-key';
 
-                        var whereConditions = {};
-                        whereConditions[reverseForeignKeys[k].sourceColumns[0]] = tableData.body[i][reverseForeignKeys[k].targetColumns[0]];
+                        var selectionQuery = new SelectionQuery();
+                        selectionQuery.tableName = reverseForeignKeys[k].sourceTable;
+                        selectionQuery.whereConditions[reverseForeignKeys[k].sourceColumns[0]] = tableData.body[i][reverseForeignKeys[k].targetColumns[0]];
 
-                        link.href = instance.urlForTableSelection(reverseForeignKeys[k].sourceTable, whereConditions);
+                        link.href = instance.urlFromSelectionQuery(selectionQuery);
 
                         linksContainer.appendChild(link);
                     }
@@ -227,79 +229,71 @@ function AdminerAjaxConnector(connectionUsername, connectionDb) {
         return tableElement;
     };
 
-    instance.urlForTableSelection = function(tableName, whereConditionsObject) {
+    instance.urlFromSelectionQuery = function(selectionQuery) {
         var urlParts = [];
         urlParts.push('username=' + connectionUsername);
         urlParts.push('db=' + connectionDb);
-        urlParts.push('select=' + tableName);
+        urlParts.push('select=' + selectionQuery.tableName);
 
         var index = 0;
-        for (var conditionName in whereConditionsObject) {
-            if (Object.prototype.hasOwnProperty.call(whereConditionsObject, conditionName)) {
-                urlParts.push(instance.urlForWhereCondition(index++, conditionName, whereConditionsObject[conditionName]));
+        for (var conditionName in selectionQuery.whereConditions) {
+            if (Object.prototype.hasOwnProperty.call(selectionQuery.whereConditions, conditionName)) {
+                urlParts.push(instance._urlForWhereCondition(index++, conditionName, selectionQuery.whereConditions[conditionName]));
             }
         }
 
         return '?' + urlParts.join('&');
     };
 
-    instance.tableSelectionForUrl = function(url) {
+    instance.selectionQueryFromUrl = function(url) {
         var params = (new URL(url)).searchParams;
 
-        var selection = {
-            table: null,
-            type: null,
-            conditions: {}
-        };
+        var selectionQuery = new SelectionQuery();
+
 
 
         if (params.get('select') !== null) {
-            selection.table = params.get('select');
-            selection.type = 'select';
+            selectionQuery.tableName = params.get('select');
+            // selection.type = 'select';
 
-            var i = 0;
-            while (params.get('where[' + i + '][col]') !== null) {
+            for (var i = 0; params.get('where[' + i + '][col]') !== null; i++) {
 
                 if (params.get('where[' + i + '][op]') === '=') {
-                    selection.conditions[params.get('where[' + i + '][col]')] = params.get('where[' + i + '][val]');
+                    selectionQuery.whereConditions[params.get('where[' + i + '][col]')] = params.get('where[' + i + '][val]');
                 }
-
-                i++;
             }
 
-            if (params.get('modify') === '1') {
-                selection.type = 'modify';
-            }
+            // if (params.get('modify') === '1') {
+            //     selection.type = 'modify';
+            // }
         }
 
         if (params.get('edit') !== null) {
-            selection.table = params.get('edit');
-            selection.type = 'edit';
+            selectionQuery.tableName = params.get('edit');
+            // selection.type = 'edit';
 
             var keys = params.keys();
             var key = keys.next();
             while (key.done === false) {
                 if (key.value.startsWith('where')) {
                     var pair = key.value.replace(']', '').split('[');
-                    selection.conditions[pair[1]] = params.get(key.value);
+                    selectionQuery.whereConditions[pair[1]] = params.get(key.value);
                 }
 
                 key = keys.next();
             }
         }
 
-
-
-        return selection;
+        return selectionQuery;
     };
 
-    instance.urlForWhereCondition = function (index, columnName, value) {
+    instance._urlForWhereCondition = function (index, columnName, value) {
         return 'where[' + index + '][col]=' + encodeURIComponent(columnName)
             + '&where[' + index + '][op]=='
             + '&where[' + index + '][val]=' + encodeURIComponent(value)
     };
 
-    instance.ajaxRequest = function(theUrl, callback, sendXRequestHeader) {
+    instance._ajaxRequest = function(theUrl, callback, sendXRequestHeader) {
 
         var xmlHttp = new XMLHttpRequest();
 
@@ -385,16 +379,16 @@ function AdminerTreeView() {
         return modal;
     };
 
-    instance.openSelectionIntoContainer = function(tableName, whereConditionsObject, containerElement) {
-        connector.getSelectionData(tableName, whereConditionsObject, function(selectionData){
+    instance.openSelectionIntoContainer = function(selectionQuery, containerElement) {
+        connector.getSelectionData(selectionQuery, function(selectionData){
 
-            var table = connector._createTableElementFromSelectionData(tableName, selectionData);
+            var table = connector._createTableElementFromSelectionData(selectionQuery.tableName, selectionData);
 
             var selection = document.createElement('div');
             selection.className = 'selection';
 
             var header = document.createElement('h3');
-            header.innerText = tableName;
+            header.innerText = selectionQuery.tableName;
             selection.appendChild(header);
 
             selection.appendChild(table);
@@ -411,8 +405,8 @@ function AdminerTreeView() {
                     e.preventDefault();
 
                     if (e.target.className === 'direct-foreign-key' || e.target.className === 'reverse-foreign-key') {
-                        var subSection = connector.tableSelectionForUrl(e.target.href);
-                        instance.openSelectionIntoContainer(subSection.table, subSection.conditions, subSelectionsBox);
+                        var subSection = connector.selectionQueryFromUrl(e.target.href);
+                        instance.openSelectionIntoContainer(subSection, subSelectionsBox);
                     }
 
                     // if (subSection.type === 'select') {
@@ -438,11 +432,11 @@ function AdminerTreeView() {
 
         var dataRowElement = event.target.parentElement.parentElement;
         var editUrl = dataRowElement.querySelector('a.edit').href;
-        var selectionParameters = connector.tableSelectionForUrl(editUrl);
+        var selectionQuery = connector.selectionQueryFromUrl(editUrl);
 
         treeModal.style.display = 'block';
 
-        instance.openSelectionIntoContainer(selectionParameters.table, selectionParameters.conditions, modalContent);
+        instance.openSelectionIntoContainer(selectionQuery, modalContent);
 
     };
 

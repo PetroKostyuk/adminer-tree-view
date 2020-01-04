@@ -48,6 +48,12 @@ function AdminerAjaxConnector(connectionUsername, connectionDb) {
 
         instance._ajaxRequest(requestUrl, function(pageHtml){
             var tableHtml = instance._getTableFromSelectionHtml(pageHtml);
+            console.log(tableHtml);
+
+            if (tableHtml.trim() === '') {
+                callback(new SelectionData());
+                return;
+            }
 
             var foreignKeysMatch = tableHtml.match(/<meta name=\"foreign-keys\" content=\"(.+)\"\/>/);
             var foreignKeys = JSON.parse(foreignKeysMatch[1]);
@@ -252,6 +258,12 @@ function HtmlGenerator(adminerAjaxConnector) {
         tableNameElement.colSpan = tableData.headers.length;
         tableNameElement.innerText = tableCaption;
 
+        if (tableData.body.length === 0) {
+            tableElement.querySelector('tbody').innerHTML = '<tr><td><i>Empty result</i></td></tr>';
+
+            return tableElement;
+        }
+
         var theadRow = tableElement.querySelector('.headers');
         for (var i = 0; i < tableData.headers.length; i++) {
             var th = document.createElement('th');
@@ -320,7 +332,6 @@ function HtmlGenerator(adminerAjaxConnector) {
 
                     td.appendChild(linksContainer);
                 }
-
             }
         }
 

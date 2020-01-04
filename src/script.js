@@ -101,98 +101,6 @@ function AdminerAjaxConnector(connectionUsername, connectionDb) {
         return selectionData;
     };
 
-    instance._createTableElementFromSelectionData = function (tableName, tableData) {
-        var tableElement = document.createElement('table');
-
-
-        var thead = document.createElement('thead');
-        tableElement.appendChild(thead);
-
-        var theadRow = document.createElement('tr');
-        thead.appendChild(theadRow);
-
-        for (var i = 0; i < tableData.headers.length; i++) {
-            var th = document.createElement('th');
-            th.innerText = tableData.headers[i];
-            theadRow.appendChild(th);
-        }
-
-
-        var tbody = document.createElement('tbody');
-        tableElement.appendChild(tbody);
-
-        for (var i = 0; i < tableData.body.length; i++) {
-            var dataRow = document.createElement('tr');
-            tbody.appendChild(dataRow);
-
-            for (var j = 0; j < tableData.headers.length; j++) {
-                var td = document.createElement('td');
-                dataRow.appendChild(td);
-
-                // process direct foreign keys
-                var foreignKey = tableData.directForeignKeys[tableData.headers[j]];
-                if (foreignKey !== undefined) {
-                    var link = document.createElement('a');
-                    td.appendChild(link);
-                    link.innerText = tableData.body[i][tableData.headers[j]];
-                    link.className = 'direct-foreign-key';
-
-                    var selectionQuery = new SelectionQuery();
-                    selectionQuery.tableName = foreignKey.targetTable;
-                    selectionQuery.whereConditions[foreignKey.targetColumns[0]] = tableData.body[i][foreignKey.sourceColumns[0]];
-
-                    link.href = instance.urlFromSelectionQuery(selectionQuery);
-
-                } else {
-                    td.innerText = tableData.body[i][tableData.headers[j]];
-                }
-
-                // process reverse foreign keys
-                var reverseForeignKeys = tableData.reverseForeignKeys[tableData.headers[j]];
-                console.log(reverseForeignKeys);
-                if (reverseForeignKeys !== undefined) {
-
-                    var linksContainer = document.createElement('div');
-                    linksContainer.style.display = 'none';
-
-                    var linkToggleButton = document.createElement('a');
-                    linkToggleButton.innerText = ' [R]';
-                    linkToggleButton.href = '#!';
-                    linkToggleButton.addEventListener('click', function () {
-                        if (linksContainer.style.display == 'none') {
-                            linksContainer.style.display = 'block';
-                        } else {
-                            linksContainer.style.display = 'none';
-                        }
-                    });
-
-                    for (var k = 0; k < reverseForeignKeys.length; k++) {
-
-                        var link = document.createElement('a');
-                        link.style.display = 'block';
-                        td.appendChild(link);
-                        link.innerText = reverseForeignKeys[k].sourceTable + '.' + reverseForeignKeys[k].sourceColumns[0]; //tableData.body[i][tableData.headers[j]];
-                        link.className = 'reverse-foreign-key';
-
-                        var selectionQuery = new SelectionQuery();
-                        selectionQuery.tableName = reverseForeignKeys[k].sourceTable;
-                        selectionQuery.whereConditions[reverseForeignKeys[k].sourceColumns[0]] = tableData.body[i][reverseForeignKeys[k].targetColumns[0]];
-
-                        link.href = instance.urlFromSelectionQuery(selectionQuery);
-
-                        linksContainer.appendChild(link);
-                    }
-
-                    td.appendChild(linkToggleButton);
-                    td.appendChild(linksContainer);
-                }
-
-            }
-        }
-
-        return tableElement;
-    };
-
     instance.urlFromSelectionQuery = function(selectionQuery) {
         var urlParts = [];
         urlParts.push('username=' + connectionUsername);
@@ -279,17 +187,110 @@ function AdminerAjaxConnector(connectionUsername, connectionDb) {
 
 }
 
-function HtmlTemplates() {
-    this.modalHtml =
-        '<div id="tree-modal" style="position:fixed; top:50px; left:50px; width:calc(100% - 100px);height:calc(100% - 100px);background:white; border:1px solid; display:none">' +
-        '   <h1>' +
-        '       <span class="title">Tree browser</span>' +
-        '       <a class="close" href="#!" style="float:right;">close</a>' +
-        '   </h1>' +
-        '   <div class="modal-content" style="overflow:auto; position:absolute; width:calc(100% - 20px); height:calc(100% - 162px); top:62px; left:0; margin:0 10px; padding-bottom:100px;"></div>' +
-        '</div>';
+function HtmlGenerator(adminerAjaxConnector) {
+    var instance = this;
 
-    this.getTemplateAsElement = function(htmlTemplate) {
+    instance.getModalElement = function() {
+        var modal = instance._getTemplateAsElement(
+            '<div id="tree-modal" style="position:fixed; top:50px; left:50px; width:calc(100% - 100px);height:calc(100% - 100px);background:white; border:1px solid; display:none">' +
+            '   <h1>' +
+            '       <span class="title">Tree browser</span>' +
+            '       <a class="close" href="#!" style="float:right;">close</a>' +
+            '   </h1>' +
+            '   <div class="modal-content" style="overflow:auto; position:absolute; width:calc(100% - 20px); height:calc(100% - 162px); top:62px; left:0; margin:0 10px; padding-bottom:100px;"></div>' +
+            '</div>'
+        );
+
+        modal.querySelector('.close').addEventListener('click', function () {
+            modal.style.display = 'none';
+        });
+
+        return modal;
+    };
+
+    instance.createTableElementFromSelectionData = function (tableName, tableData) {
+        var tableElement = instance._getTemplateAsElement(
+            '<table>' +
+            '   <thead><tr></tr></thead>' +
+            '   <tbody></tbody>' +
+            '</table>'
+        );
+
+        var theadRow = tableElement.querySelector('thead tr');
+        for (var i = 0; i < tableData.headers.length; i++) {
+            var th = document.createElement('th');
+            th.innerText = tableData.headers[i];
+            theadRow.appendChild(th);
+        }
+
+        var tbody = tableElement.querySelector('tbody');
+        for (var i = 0; i < tableData.body.length; i++) {
+            var dataRow = document.createElement('tr');
+            tbody.appendChild(dataRow);
+
+            for (var j = 0; j < tableData.headers.length; j++) {
+                var td = document.createElement('td');
+                dataRow.appendChild(td);
+
+                // process direct foreign keys
+                var foreignKey = tableData.directForeignKeys[tableData.headers[j]];
+                if (foreignKey !== undefined) {
+                    var link = instance._getTemplateAsElement('<a class="direct-foreign-key" />');
+                    link.innerText = tableData.body[i][tableData.headers[j]];
+                    td.appendChild(link);
+
+                    var selectionQuery = new SelectionQuery();
+                    selectionQuery.tableName = foreignKey.targetTable;
+                    selectionQuery.whereConditions[foreignKey.targetColumns[0]] = tableData.body[i][foreignKey.sourceColumns[0]];
+
+                    link.href = adminerAjaxConnector.urlFromSelectionQuery(selectionQuery);
+
+                } else {
+                    td.innerText = tableData.body[i][tableData.headers[j]];
+                }
+
+                // process reverse foreign keys
+                var reverseForeignKeys = tableData.reverseForeignKeys[tableData.headers[j]];
+                console.log(reverseForeignKeys);
+                if (reverseForeignKeys !== undefined) {
+                    var linksContainer = instance._getTemplateAsElement('<div class="reverse-foreign-keys" style="display:none"></div>');
+
+                    var linkToggleButton = instance._getTemplateAsElement('<a href="#!" >[R]</a>');
+                    linkToggleButton.addEventListener('click', function () {
+                        if (linksContainer.style.display == 'none') {
+                            linksContainer.style.display = 'block';
+                        } else {
+                            linksContainer.style.display = 'none';
+                        }
+                    });
+
+                    td.appendChild(linkToggleButton);
+
+                    for (var k = 0; k < reverseForeignKeys.length; k++) {
+
+                        var link = instance._getTemplateAsElement('<a class="reverse-foreign-key" style="display: block;" />');
+                        link.innerText = reverseForeignKeys[k].sourceTable + '.' + reverseForeignKeys[k].sourceColumns[0]; //tableData.body[i][tableData.headers[j]];
+                        td.appendChild(link);
+
+                        var selectionQuery = new SelectionQuery();
+                        selectionQuery.tableName = reverseForeignKeys[k].sourceTable;
+                        selectionQuery.whereConditions[reverseForeignKeys[k].sourceColumns[0]] = tableData.body[i][reverseForeignKeys[k].targetColumns[0]];
+
+                        link.href = adminerAjaxConnector.urlFromSelectionQuery(selectionQuery);
+
+                        linksContainer.appendChild(link);
+                    }
+
+                    td.appendChild(linksContainer);
+                }
+
+            }
+        }
+
+        return tableElement;
+    };
+
+    instance._getTemplateAsElement = function(htmlTemplate) {
         var div = document.createElement('div');
         div.innerHTML = htmlTemplate;
         return div.children[0];
@@ -298,13 +299,14 @@ function HtmlTemplates() {
 
 function AdminerTreeView() {
     var instance = this;
-    var templates = new HtmlTemplates();
 
     var url = new URL(window.location.href.toString());
     var connector = new AdminerAjaxConnector(
         url.searchParams.get('username'),
         url.searchParams.get('db')
     );
+
+    var htmlGenerator = new HtmlGenerator(connector);
 
     instance.init = function() {
         instance.addTreeViewColumnToTable()
@@ -331,22 +333,10 @@ function AdminerTreeView() {
         })
     };
 
-    instance.createTreeModal = function() {
-
-        var modal = templates.getTemplateAsElement(templates.modalHtml);
-        modal.querySelector('.close').addEventListener('click', function () {
-            modal.style.display = 'none';
-        });
-
-        document.body.appendChild(modal);
-
-        return modal;
-    };
-
     instance.openSelectionIntoContainer = function(selectionQuery, containerElement) {
         connector.getSelectionData(selectionQuery, function(selectionData){
 
-            var table = connector._createTableElementFromSelectionData(selectionQuery.tableName, selectionData);
+            var table = htmlGenerator.createTableElementFromSelectionData(selectionQuery.tableName, selectionData);
 
             var selection = document.createElement('div');
             selection.className = 'selection';
@@ -387,8 +377,10 @@ function AdminerTreeView() {
 
     instance.displayModal = function(event) {
         var treeModal = document.querySelector('#tree-modal');
+
         if (treeModal === null) {
-            treeModal = instance.createTreeModal()
+            treeModal = htmlGenerator.getModalElement();
+            document.body.appendChild(treeModal);
         }
 
         var modalContent = treeModal.querySelector('.modal-content');

@@ -11,12 +11,10 @@ Zhodnoťte, zda-li bylo rozhraní Admineru vhodné a použitelné pro tento úko
 nezávislé na použité databázi, či vázané na konkrétní RDBMS.
 */
 
-class AdminerTreeViewer extends Adminer {
+class AdminerTreeViewer {
 
     function navigation($ve)
     {
-        parent::navigation($ve);
-
         if (isset($_GET['select'])) {
             echo script("<<<%SCRIPT_JS%>>>");
             echo script('(new AdminerTreeView()).init();');
@@ -39,7 +37,7 @@ class AdminerTreeViewer extends Adminer {
         $foreignKeysList = [];
 
         foreach ($tables as $table) {
-            foreach ($this->foreignKeys($table) as $foreignKey) {
+            foreach (adminer()->foreignKeys($table) as $foreignKey) {
 
                 $foreignKeysList[] = [
                     'sourceTable' => $table,

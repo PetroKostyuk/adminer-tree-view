@@ -233,7 +233,7 @@ function HtmlGenerator(adminerAjaxConnector) {
             return tableElement;
         }
 
-        var modifyAllUrl = connector.urlFromSelectionQuery(selectionQuery) + '&modify=1';
+        var modifyAllUrl = adminerAjaxConnector.urlFromSelectionQuery(selectionQuery) + '&modify=1';
         tableElement.querySelector('.modify-all').href = modifyAllUrl;
 
         var theadRow = tableElement.querySelector('.headers');

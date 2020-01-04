@@ -2,14 +2,8 @@
 
 function adminer_object() {
     // required to run any plugin
-    include_once "./plugins/plugin.php";
+    require_once "./plugins/plugin.php";
     require_once "./plugins/AdminerTreeViewer.php";
-
-    $plugins = array(
-        // specify enabled plugins here
-        new AdminerTreeViewer(),
-    );
-
 
     class AdminerCustomization extends AdminerPlugin{
         function login($login, $password) {
@@ -17,7 +11,9 @@ function adminer_object() {
         }
     }
 
-    return new AdminerCustomization($plugins);
+    return new AdminerCustomization([
+        new AdminerTreeViewer()
+    ]);
 }
 
 // include original Adminer or Adminer Editor

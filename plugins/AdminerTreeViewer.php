@@ -1,7 +1,6 @@
 <?php
 
 /*
-
 Seznamte se s webovým nástrojem Adminer, určeným k pohodlné správě relačních databází ve webovém prohlížeči. Nastudujte
 možnosti jeho rozšíření a relevantní PHP API určené pro tvoru pluginů.
 
@@ -10,15 +9,12 @@ dat. Naimplementujte tuto funkcionalitu jako plugin do nástroje Adminer.
 
 Zhodnoťte, zda-li bylo rozhraní Admineru vhodné a použitelné pro tento úkol. Uvažte, je-li publikované rozšíření
 nezávislé na použité databázi, či vázané na konkrétní RDBMS.
-
 */
 
-class AdminerTreeViewer extends Adminer {
+class AdminerTreeViewer {
 
     function navigation($ve)
     {
-        parent::navigation($ve);
-
         if (isset($_GET['select'])) {
             echo script("
 function SelectionQuery() {
@@ -41,7 +37,6 @@ function AdminerAjaxConnector(connectionUsername, connectionDb) {
 
         instance._ajaxRequest(requestUrl, function(pageHtml){
             var tableHtml = instance._getTableFromSelectionHtml(pageHtml);
-            console.log(tableHtml);
 
             if (tableHtml.trim() === '') {
                 callback(new SelectionData());
@@ -50,7 +45,7 @@ function AdminerAjaxConnector(connectionUsername, connectionDb) {
 
             var foreignKeysMatch = tableHtml.match(/<meta name=\"foreign-keys\" content=\"(.+)\"\/>/);
             var foreignKeys = JSON.parse(foreignKeysMatch[1]);
-            console.log(foreignKeys);
+
             tableHtml = tableHtml.replace(foreignKeysMatch[0], '');
 
             var tableElement = document.createElement('table');
@@ -256,7 +251,7 @@ function HtmlGenerator(adminerAjaxConnector) {
             return tableElement;
         }
 
-        var modifyAllUrl = connector.urlFromSelectionQuery(selectionQuery) + '&modify=1';
+        var modifyAllUrl = adminerAjaxConnector.urlFromSelectionQuery(selectionQuery) + '&modify=1';
         tableElement.querySelector('.modify-all').href = modifyAllUrl;
 
         var theadRow = tableElement.querySelector('.headers');
@@ -294,7 +289,6 @@ function HtmlGenerator(adminerAjaxConnector) {
 
                 // process reverse foreign keys
                 var reverseForeignKeys = tableData.reverseForeignKeys[tableData.headers[j]];
-                console.log(reverseForeignKeys);
                 if (reverseForeignKeys !== undefined) {
                     var linksContainer = instance._getTemplateAsElement('<div class=\"reverse-foreign-keys\" style=\"display:none\"></div>');
 
@@ -449,15 +443,11 @@ function AdminerTreeView() {
 
         return table;
     };
-
-    window.treeView = instance;
-    window.connector = connector;
 }
 ");
             echo script('(new AdminerTreeView()).init();');
         }
     }
-
 
     function rowDescriptions($rows, $foreignKeys) {
 
@@ -475,7 +465,7 @@ function AdminerTreeView() {
         $foreignKeysList = [];
 
         foreach ($tables as $table) {
-            foreach ($this->foreignKeys($table) as $foreignKey) {
+            foreach (adminer()->foreignKeys($table) as $foreignKey) {
 
                 $foreignKeysList[] = [
                     'sourceTable' => $table,

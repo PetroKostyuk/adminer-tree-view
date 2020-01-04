@@ -243,26 +243,28 @@ function HtmlGenerator(adminerAjaxConnector) {
         return modal;
     };
 
-    instance.createTableElementFromSelectionData = function (tableName, tableData, tableCaption) {
+    instance.createTableElementFromSelectionData = function (selectionQuery, tableData) {
         var tableElement = instance._getTemplateAsElement(
             '<table>' +
             '   <thead>' +
-            '       <tr><th class=\"table-name\"></th></tr>' +
+            '       <tr><th class=\"table-name-cell\"><span class=\"table-name-caption\"></span>: <a class=\"modify-all\" target=\"_blank\">Modify</a></th></tr>' +
             '       <tr class=\"headers\"></tr>' +
             '   </thead>' +
             '   <tbody></tbody>' +
             '</table>'
         );
 
-        var tableNameElement = tableElement.querySelector('.table-name');
-        tableNameElement.colSpan = tableData.headers.length;
-        tableNameElement.innerText = tableCaption;
+        tableElement.querySelector('.table-name-cell').colSpan = tableData.headers.length;
+        tableElement.querySelector('.table-name-caption').innerText = instance._tableCaptionFromSelectionQuery(selectionQuery);
 
         if (tableData.body.length === 0) {
             tableElement.querySelector('tbody').innerHTML = '<tr><td><i>Empty result</i></td></tr>';
 
             return tableElement;
         }
+
+        var modifyAllUrl = connector.urlFromSelectionQuery(selectionQuery) + '&modify=1';
+        tableElement.querySelector('.modify-all').href = modifyAllUrl;
 
         var theadRow = tableElement.querySelector('.headers');
         for (var i = 0; i < tableData.headers.length; i++) {
@@ -303,7 +305,7 @@ function HtmlGenerator(adminerAjaxConnector) {
                 if (reverseForeignKeys !== undefined) {
                     var linksContainer = instance._getTemplateAsElement('<div class=\"reverse-foreign-keys\" style=\"display:none\"></div>');
 
-                    var linkToggleButton = instance._getTemplateAsElement('<a href=\"#!\" >[R]</a>');
+                    var linkToggleButton = instance._getTemplateAsElement('<a href=\"#!\"> [R]</a>');
                     linkToggleButton.addEventListener('click', function (e) {
                         var container = e.target.parentNode.querySelector('.reverse-foreign-keys');
                         if (container.style.display === 'none') {
@@ -336,6 +338,18 @@ function HtmlGenerator(adminerAjaxConnector) {
         }
 
         return tableElement;
+    };
+
+    instance._tableCaptionFromSelectionQuery = function (selectionQuery) {
+
+        var whereConditionsList = [];
+        for (var conditionName in selectionQuery.whereConditions) {
+            if (Object.prototype.hasOwnProperty.call(selectionQuery.whereConditions, conditionName)) {
+                whereConditionsList.push(conditionName + \" = \" + selectionQuery.whereConditions[conditionName]);
+            }
+        }
+
+        return selectionQuery.tableName + \" [\" + whereConditionsList.join(', ') + \"]\";
     };
 
     instance._getTemplateAsElement = function(htmlTemplate) {
@@ -384,8 +398,7 @@ function AdminerTreeView() {
     instance.openSelectionIntoContainer = function(selectionQuery, containerElement) {
         connector.getSelectionData(selectionQuery, function(selectionData){
 
-            var tableCaption = instance.tableCaptionFromSelectionQuery(selectionQuery);
-            var table = htmlGenerator.createTableElementFromSelectionData(selectionQuery.tableName, selectionData, tableCaption);
+            var table = htmlGenerator.createTableElementFromSelectionData(selectionQuery, selectionData);
 
             var selection = document.createElement('div');
             selection.className = 'selection';
@@ -399,36 +412,18 @@ function AdminerTreeView() {
             var tableLinks = table.querySelectorAll('a');
             for (var i = 0; i < tableLinks.length; i++) {
                 tableLinks[i].addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    e.preventDefault();
-
                     if (e.target.className === 'direct-foreign-key' || e.target.className === 'reverse-foreign-key') {
+                        e.stopPropagation();
+                        e.preventDefault();
+
                         var subSection = connector.selectionQueryFromUrl(e.target.href);
                         instance.openSelectionIntoContainer(subSection, subSelectionsBox);
                     }
-
-                    // if (subSection.type === 'select') {
-                    // }
-                    // if (subSection.type === 'edit' || subSection.type === 'modify') {
-                    //     window.open(e.target.href);
-                    // }
                 });
             }
 
             containerElement.appendChild(selection);
         });
-    };
-
-    instance.tableCaptionFromSelectionQuery = function (selectionQuery) {
-
-        var whereConditionsList = [];
-        for (var conditionName in selectionQuery.whereConditions) {
-            if (Object.prototype.hasOwnProperty.call(selectionQuery.whereConditions, conditionName)) {
-                whereConditionsList.push(conditionName + \" = \" + selectionQuery.whereConditions[conditionName]);
-            }
-        }
-
-        return selectionQuery.tableName + \" [\" + whereConditionsList.join(', ') + \"]\";
     };
 
     instance.displayModal = function(event) {

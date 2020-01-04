@@ -19,7 +19,6 @@ function AdminerAjaxConnector(connectionUsername, connectionDb) {
 
         instance._ajaxRequest(requestUrl, function(pageHtml){
             var tableHtml = instance._getTableFromSelectionHtml(pageHtml);
-            console.log(tableHtml);
 
             if (tableHtml.trim() === '') {
                 callback(new SelectionData());
@@ -28,7 +27,7 @@ function AdminerAjaxConnector(connectionUsername, connectionDb) {
 
             var foreignKeysMatch = tableHtml.match(/<meta name="foreign-keys" content="(.+)"\/>/);
             var foreignKeys = JSON.parse(foreignKeysMatch[1]);
-            console.log(foreignKeys);
+
             tableHtml = tableHtml.replace(foreignKeysMatch[0], '');
 
             var tableElement = document.createElement('table');
@@ -272,7 +271,6 @@ function HtmlGenerator(adminerAjaxConnector) {
 
                 // process reverse foreign keys
                 var reverseForeignKeys = tableData.reverseForeignKeys[tableData.headers[j]];
-                console.log(reverseForeignKeys);
                 if (reverseForeignKeys !== undefined) {
                     var linksContainer = instance._getTemplateAsElement('<div class="reverse-foreign-keys" style="display:none"></div>');
 
@@ -427,7 +425,4 @@ function AdminerTreeView() {
 
         return table;
     };
-
-    window.treeView = instance;
-    window.connector = connector;
 }

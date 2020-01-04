@@ -1,7 +1,6 @@
 <?php
 
 /*
-
 Seznamte se s webovým nástrojem Adminer, určeným k pohodlné správě relačních databází ve webovém prohlížeči. Nastudujte
 možnosti jeho rozšíření a relevantní PHP API určené pro tvoru pluginů.
 
@@ -10,7 +9,6 @@ dat. Naimplementujte tuto funkcionalitu jako plugin do nástroje Adminer.
 
 Zhodnoťte, zda-li bylo rozhraní Admineru vhodné a použitelné pro tento úkol. Uvažte, je-li publikované rozšíření
 nezávislé na použité databázi, či vázané na konkrétní RDBMS.
-
 */
 
 class AdminerTreeViewer extends Adminer {
@@ -24,7 +22,6 @@ class AdminerTreeViewer extends Adminer {
             echo script('(new AdminerTreeView()).init();');
         }
     }
-
 
     function rowDescriptions($rows, $foreignKeys) {
 

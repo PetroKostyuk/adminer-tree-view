@@ -208,15 +208,22 @@ function HtmlGenerator(adminerAjaxConnector) {
         return modal;
     };
 
-    instance.createTableElementFromSelectionData = function (tableName, tableData) {
+    instance.createTableElementFromSelectionData = function (tableName, tableData, tableCaption) {
         var tableElement = instance._getTemplateAsElement(
             '<table>' +
-            '   <thead><tr></tr></thead>' +
+            '   <thead>' +
+            '       <tr><th class="table-name"></th></tr>' +
+            '       <tr class="headers"></tr>' +
+            '   </thead>' +
             '   <tbody></tbody>' +
             '</table>'
         );
 
-        var theadRow = tableElement.querySelector('thead tr');
+        var tableNameElement = tableElement.querySelector('.table-name');
+        tableNameElement.colSpan = tableData.headers.length;
+        tableNameElement.innerText = tableCaption;
+
+        var theadRow = tableElement.querySelector('.headers');
         for (var i = 0; i < tableData.headers.length; i++) {
             var th = document.createElement('th');
             th.innerText = tableData.headers[i];
@@ -256,11 +263,12 @@ function HtmlGenerator(adminerAjaxConnector) {
                     var linksContainer = instance._getTemplateAsElement('<div class="reverse-foreign-keys" style="display:none"></div>');
 
                     var linkToggleButton = instance._getTemplateAsElement('<a href="#!" >[R]</a>');
-                    linkToggleButton.addEventListener('click', function () {
-                        if (linksContainer.style.display == 'none') {
-                            linksContainer.style.display = 'block';
+                    linkToggleButton.addEventListener('click', function (e) {
+                        var container = e.target.parentNode.querySelector('.reverse-foreign-keys');
+                        if (container.style.display === 'none') {
+                            container.style.display = 'block';
                         } else {
-                            linksContainer.style.display = 'none';
+                            container.style.display = 'none';
                         }
                     });
 
@@ -336,15 +344,11 @@ function AdminerTreeView() {
     instance.openSelectionIntoContainer = function(selectionQuery, containerElement) {
         connector.getSelectionData(selectionQuery, function(selectionData){
 
-            var table = htmlGenerator.createTableElementFromSelectionData(selectionQuery.tableName, selectionData);
+            var tableCaption = instance.tableCaptionFromSelectionQuery(selectionQuery);
+            var table = htmlGenerator.createTableElementFromSelectionData(selectionQuery.tableName, selectionData, tableCaption);
 
             var selection = document.createElement('div');
             selection.className = 'selection';
-
-            var header = document.createElement('h3');
-            header.innerText = selectionQuery.tableName;
-            selection.appendChild(header);
-
             selection.appendChild(table);
 
             var subSelectionsBox = document.createElement('div');
@@ -373,6 +377,18 @@ function AdminerTreeView() {
 
             containerElement.appendChild(selection);
         });
+    };
+
+    instance.tableCaptionFromSelectionQuery = function (selectionQuery) {
+
+        var whereConditionsList = [];
+        for (var conditionName in selectionQuery.whereConditions) {
+            if (Object.prototype.hasOwnProperty.call(selectionQuery.whereConditions, conditionName)) {
+                whereConditionsList.push(conditionName + " = " + selectionQuery.whereConditions[conditionName]);
+            }
+        }
+
+        return selectionQuery.tableName + " [" + whereConditionsList.join(', ') + "]";
     };
 
     instance.displayModal = function(event) {

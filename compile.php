@@ -18,7 +18,7 @@ function generateScript(): void
     $phpScript = file_get_contents('./src/index.php');
     $jsScript = file_get_contents('./src/script.js');
 
-    file_put_contents('./index.php', str_replace('<<<%SCRIPT_JS%>>>', str_replace('"', '\\"', $jsScript), $phpScript));
+    file_put_contents('./plugins/AdmirerTreeViewer.php', str_replace('<<<%SCRIPT_JS%>>>', str_replace('"', '\\"', $jsScript), $phpScript));
 
     echo "generated script at " . date('H:i:s') . "\n";
 }

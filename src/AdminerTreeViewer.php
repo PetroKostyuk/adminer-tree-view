@@ -15,14 +15,20 @@ class AdminerTreeViewer {
 
     function navigation($ve)
     {
+        // $_GET['select'] indicates that we are on page with selection of table.
         if (isset($_GET['select'])) {
+
+            // string will be replaced during compilation
             echo script("<<<%SCRIPT_JS%>>>");
+
+            // after we included script with AdminerTreeView, init it
             echo script('(new AdminerTreeView()).init();');
         }
     }
 
     function rowDescriptions($rows, $foreignKeys) {
 
+        // prepare foreign keys in format suitable for JS
         $foreignKeysList = $this->getForeignKeysList();
         $foreignKeysJson = json_encode($foreignKeysList);
 
@@ -33,10 +39,13 @@ class AdminerTreeViewer {
     }
 
     private function getForeignKeysList() {
+        // table_status gets list of table names for current DB
         $tables = array_column(table_status('', true), 'Name');
         $foreignKeysList = [];
 
         foreach ($tables as $table) {
+
+            // adminer() gets global instance of Adminer
             foreach (adminer()->foreignKeys($table) as $foreignKey) {
 
                 $foreignKeysList[] = [

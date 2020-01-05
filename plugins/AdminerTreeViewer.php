@@ -429,7 +429,7 @@ function HtmlGenerator(adminerAjaxConnector) {
                         // create selectionQuery from information about foreign key
                         var selectionQuery = new SelectionQuery();
                         selectionQuery.tableName = reverseForeignKeys[k].sourceTable;
-                        for (var q = 0; q < foreignKey.sourceColumns.length; q++) {
+                        for (var q = 0; q < reverseForeignKeys[k].sourceColumns.length; q++) {
                             selectionQuery.whereConditions[reverseForeignKeys[k].sourceColumns[q]] = selectionData.body[i][reverseForeignKeys[k].targetColumns[q]];
                         }
 

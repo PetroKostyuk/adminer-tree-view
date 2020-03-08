@@ -67,7 +67,7 @@ function AdminerAjaxConnector(url) {
 
             // pass extracted selectionData to callback
             callback(selectionData);
-        }, false);
+        });
     };
 
     /**
@@ -246,24 +246,10 @@ function AdminerAjaxConnector(url) {
      * @param sendXRequestHeader bool - if true, header will be sent that directs Adminer to send only body of selection, without rest of page
      * @private
      */
-    instance._ajaxRequest = function(theUrl, callback, sendXRequestHeader) {
+    instance._ajaxRequest = async function(theUrl, callback) {
 
-        var xmlHttp = new XMLHttpRequest();
-
-        xmlHttp.onreadystatechange = function() {
-            if (xmlHttp.readyState === 4) {
-                callback(xmlHttp.responseText);
-            }
-        };
-
-        xmlHttp.open('GET', theUrl); // false for synchronous request
-
-        if (sendXRequestHeader) {
-            // this header is recognised as ajax and adminer sends table without header
-            xmlHttp.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-        }
-
-        xmlHttp.send();
+        const response = await fetch(theUrl);
+        callback(await response.text());
     };
 }
 

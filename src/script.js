@@ -1,22 +1,26 @@
 
 /** DTO containing information about selection we want to get from server **/
-function SelectionQuery() {
-    /** name of table */
-    this.tableName = '';
-    /** associative array of columnName: columnValue of conditions to be used on selection */
-    this.whereConditions = {};
+class SelectionQuery {
+    constructor() {
+        /** name of table */
+        this.tableName = '';
+        /** associative array of columnName: columnValue of conditions to be used on selection */
+        this.whereConditions = {};
+    }
 }
 
 /** DTO with information about table content and foreign keys */
-function SelectionData() {
-    /** array of names of columns */
-    this.headers = [];
-    /** array of rows, each containing associative array of columnName: columnValue */
-    this.body = [];
-    /** associative array of columnName: foreignKey. For each column up to one foreign key */
-    this.directForeignKeys = {};
-    /** associative array of columnName: arrayOfReverseForeignKeys. For each column can be multiple foreign keys */
-    this.reverseForeignKeys = {};
+class SelectionData {
+    constructor() {
+        /** array of names of columns */
+        this.headers = [];
+        /** array of rows, each containing associative array of columnName: columnValue */
+        this.body = [];
+        /** associative array of columnName: foreignKey. For each column up to one foreign key */
+        this.directForeignKeys = {};
+        /** associative array of columnName: arrayOfReverseForeignKeys. For each column can be multiple foreign keys */
+        this.reverseForeignKeys = {};
+    }
 }
 
 /**
@@ -25,11 +29,12 @@ function SelectionData() {
  * @param url string - current url. Used to extract DB name and table name
  * @constructor
  */
-function AdminerAjaxConnector(url) {
-    var instance = this;
+class AdminerAjaxConnector {
 
-    var connectionUsername = url.searchParams.get('username');
-    var connectionDb = url.searchParams.get('db');
+    constructor(url) {
+        this.connectionUsername = url.searchParams.get('username');
+        this.connectionDb = url.searchParams.get('db');
+    }
 
     /**
      * Sends AJAX request to server getting page with selection according to selectionQuery. Since call
@@ -38,11 +43,12 @@ function AdminerAjaxConnector(url) {
      * @param selectionQuery SelectionQuery
      * @param callback function(SelectionData)
      */
-    instance.getSelectionData = function(selectionQuery, callback) {
-        var requestUrl = instance.urlFromSelectionQuery(selectionQuery);
+    getSelectionData(selectionQuery, callback) {
+        let instance = this;
+        let requestUrl = this.urlFromSelectionQuery(selectionQuery);
 
-        instance._ajaxRequest(requestUrl, function(pageHtml){
-            var tableHtml = instance._getTableFromSelectionHtml(pageHtml);
+        AdminerAjaxConnector._ajaxRequest(requestUrl, function(pageHtml){
+            let tableHtml = AdminerAjaxConnector._getTableFromSelectionHtml(pageHtml);
 
             // in case that selection is empty (there are no rows in selection), return empty SelectionData
             if (tableHtml.trim() === '') {
@@ -51,24 +57,26 @@ function AdminerAjaxConnector(url) {
             }
 
             // extract foreign keys JSON from meta tag and remove meta tag after that
-            var foreignKeysMatch = tableHtml.match(/<meta name="foreign-keys" content="(.+)"\/>/);
-            var foreignKeys = JSON.parse(foreignKeysMatch[1]);
+            let foreignKeysMatch = tableHtml.match(/<meta name="foreign-keys" content="(.+)"\/>/);
+            let foreignKeys = JSON.parse(foreignKeysMatch[1]);
             tableHtml = tableHtml.replace(foreignKeysMatch[0], '');
 
             // convert table HTML to DOM element
-            var tableElement = document.createElement('table');
+            let tableElement = document.createElement('table');
             tableElement.innerHTML = tableHtml;
 
             // extract table headers and rows
-            var selectionData = instance._extractDataFromTableElement(tableElement);
+            let selectionData = instance._extractDataFromTableElement(tableElement);
 
             // add foreign keys from previous meta tag
-            selectionData = instance._addForeignKeysToTableData(selectionQuery.tableName, selectionData, foreignKeys);
+            selectionData = AdminerAjaxConnector._addForeignKeysToTableData(selectionQuery.tableName, selectionData, foreignKeys);
 
             // pass extracted selectionData to callback
             callback(selectionData);
         });
     };
+
+
 
     /**
      * extracts html string of content of table from html of whole page
@@ -76,12 +84,12 @@ function AdminerAjaxConnector(url) {
      * @return {string} HTML string of content of table
      * @private
      */
-    instance._getTableFromSelectionHtml = function(pageHtml) {
+    static _getTableFromSelectionHtml(pageHtml) {
 
         // extract table HTML from page HTML
-        var start = pageHtml.indexOf('<table');
-        var end = pageHtml.indexOf('table>');
-        var tableHtml = pageHtml.substr(start, end - start) + 'table>';
+        let start = pageHtml.indexOf('<table');
+        let end = pageHtml.indexOf('table>');
+        let tableHtml = pageHtml.substr(start, end - start) + 'table>';
 
         // remove all inline scripts that adminer inserts
         start = tableHtml.indexOf('<script');
@@ -105,8 +113,8 @@ function AdminerAjaxConnector(url) {
      * @return {SelectionData} SelectionData without information about foreign keys
      * @private
      */
-    instance._extractDataFromTableElement = function (tableElement) {
-        var selectionData = new SelectionData();
+    _extractDataFromTableElement(tableElement) {
+        let selectionData = new SelectionData();
 
         // loop all table names from headers
         tableElement.querySelectorAll('th > a').forEach(function(th){
@@ -114,12 +122,12 @@ function AdminerAjaxConnector(url) {
         });
 
         // loop all rows. Skip first column that contains checkbox
-        var rows = tableElement.querySelectorAll('tr');
-        for (var i = 1; i < rows.length; i++) {
-            var bodyRow = {};
+        let rows = tableElement.querySelectorAll('tr');
+        for (let i = 1; i < rows.length; i++) {
+            let bodyRow = {};
 
-            var cells = rows[i].querySelectorAll('td');
-            for (var j = 1; j < cells.length; j++) {
+            let cells = rows[i].querySelectorAll('td');
+            for (let j = 1; j < cells.length; j++) {
                 bodyRow[selectionData.headers[j - 1]] = cells[j].innerText;
             }
 
@@ -137,21 +145,21 @@ function AdminerAjaxConnector(url) {
      * @return {SelectionData}
      * @private
      */
-    instance._addForeignKeysToTableData = function (tableName, selectionData, foreignKeys) {
+    static _addForeignKeysToTableData(tableName, selectionData, foreignKeys) {
 
-        for (var i = 0; i < foreignKeys.length; i++) {
-            var foreignKey = foreignKeys[i];
+        for (let i = 0; i < foreignKeys.length; i++) {
+            let foreignKey = foreignKeys[i];
 
             // if tableName is sourceTable, add as direct foreign key. Direct key is allowed only one per column
             if (foreignKey.sourceTable === tableName) {
-                for (var j = 0; j < foreignKey.sourceColumns.length; j++) {
+                for (let j = 0; j < foreignKey.sourceColumns.length; j++) {
                     selectionData.directForeignKeys[foreignKey.sourceColumns[j]] = foreignKey;
                 }
             }
 
             // if tableName is sourceTable, add as reverse foreign key. Multiple reverse keys are allowed per column
             if (foreignKey.targetTable === tableName) {
-                for (var j = 0; j < foreignKey.targetColumns.length; j++) {
+                for (let j = 0; j < foreignKey.targetColumns.length; j++) {
                     if (selectionData.reverseForeignKeys[foreignKey.targetColumns[j]] === undefined) {
                         selectionData.reverseForeignKeys[foreignKey.targetColumns[j]] = [];
                     }
@@ -168,16 +176,17 @@ function AdminerAjaxConnector(url) {
      * @param selectionQuery SelectionQuery
      * @return {string}
      */
-    instance.urlFromSelectionQuery = function(selectionQuery) {
-        var urlParts = [];
-        urlParts.push('username=' + connectionUsername);
-        urlParts.push('db=' + connectionDb);
+    urlFromSelectionQuery(selectionQuery) {
+        let urlParts = [];
+
+        urlParts.push('username=' + this.connectionUsername);
+        urlParts.push('db=' + this.connectionDb);
         urlParts.push('select=' + selectionQuery.tableName);
 
-        var index = 0;
-        for (var conditionName in selectionQuery.whereConditions) {
+        let index = 0;
+        for (let conditionName in selectionQuery.whereConditions) {
             if (Object.prototype.hasOwnProperty.call(selectionQuery.whereConditions, conditionName)) {
-                urlParts.push(instance._urlForWhereCondition(index++, conditionName, selectionQuery.whereConditions[conditionName]));
+                urlParts.push(AdminerAjaxConnector._urlForWhereCondition(index++, conditionName, selectionQuery.whereConditions[conditionName]));
             }
         }
 
@@ -189,16 +198,16 @@ function AdminerAjaxConnector(url) {
      * @param url string
      * @return {SelectionQuery}
      */
-    instance.selectionQueryFromUrl = function(url) {
-        var params = (new URL(url)).searchParams;
+    selectionQueryFromUrl(url) {
+        let params = (new URL(url)).searchParams;
 
-        var selectionQuery = new SelectionQuery();
+        let selectionQuery = new SelectionQuery();
 
         // select links have format: ...&select=library_book&where[0][col]=book&where[0][op]==&where[0][val]=2
         if (params.get('select') !== null) {
             selectionQuery.tableName = params.get('select');
 
-            for (var i = 0; params.get('where[' + i + '][col]') !== null; i++) {
+            for (let i = 0; params.get('where[' + i + '][col]') !== null; i++) {
 
                 if (params.get('where[' + i + '][op]') === '=') {
                     selectionQuery.whereConditions[params.get('where[' + i + '][col]')] = params.get('where[' + i + '][val]');
@@ -210,11 +219,11 @@ function AdminerAjaxConnector(url) {
         if (params.get('edit') !== null) {
             selectionQuery.tableName = params.get('edit');
 
-            var keys = params.keys();
-            var key = keys.next();
+            let keys = params.keys();
+            let key = keys.next();
             while (key.done === false) {
                 if (key.value.startsWith('where')) {
-                    var pair = key.value.replace(']', '').split('[');
+                    let pair = key.value.replace(']', '').split('[');
                     selectionQuery.whereConditions[pair[1]] = params.get(key.value);
                 }
 
@@ -233,7 +242,7 @@ function AdminerAjaxConnector(url) {
      * @return {string} URL part containing GET parameters with condition
      * @private
      */
-    instance._urlForWhereCondition = function (index, columnName, value) {
+    static _urlForWhereCondition(index, columnName, value) {
         return 'where[' + index + '][col]=' + encodeURIComponent(columnName)
             + '&where[' + index + '][op]=='
             + '&where[' + index + '][val]=' + encodeURIComponent(value)
@@ -243,10 +252,9 @@ function AdminerAjaxConnector(url) {
      * Calls AJAX and passes response to callback
      * @param theUrl string - url to call
      * @param callback function(string) - callback that will process HTML of response
-     * @param sendXRequestHeader bool - if true, header will be sent that directs Adminer to send only body of selection, without rest of page
      * @private
      */
-    instance._ajaxRequest = async function(theUrl, callback) {
+    static async _ajaxRequest(theUrl, callback) {
 
         const response = await fetch(theUrl);
         callback(await response.text());
@@ -255,15 +263,19 @@ function AdminerAjaxConnector(url) {
 
 /**
  * Creates HTML elements that would be too big for AdminerTreeView to create inline and keep clear readability
- * @param adminerAjaxConnector AdminerAjaxConnector - used for creation of URL links
- * @constructor
  */
-function HtmlGenerator(adminerAjaxConnector) {
-    var instance = this;
+class HtmlGenerator {
+
+    /**
+     * @param adminerAjaxConnector AdminerAjaxConnector - used for creation of URL links
+     */
+    constructor(adminerAjaxConnector) {
+        this.adminerAjaxConnector = adminerAjaxConnector;
+    }
 
     /** Creates modal div with corresponding styling and basic functionality (closing button, more may be added later) */
-    instance.getModalElement = function() {
-        var modal = instance._getTemplateAsElement(
+    getModalElement() {
+        let modal = HtmlGenerator._getTemplateAsElement(
             '<div id="tree-modal" style="position:fixed; top:50px; left:50px; width:calc(100% - 100px);height:calc(100% - 100px);background:white; border:1px solid; display:none">' +
             '   <h1>' +
             '       <span class="title">Tree browser</span>' +
@@ -285,8 +297,8 @@ function HtmlGenerator(adminerAjaxConnector) {
      * @param selectionQuery SelectionQuery
      * @param selectionData SelectionData
      */
-    instance.createTableElementFromSelectionData = function (selectionQuery, selectionData) {
-        var tableElement = instance._getTemplateAsElement(
+    createTableElementFromSelectionData(selectionQuery, selectionData) {
+        let tableElement = HtmlGenerator._getTemplateAsElement(
             '<table>' +
             '   <thead>' +
             '       <tr>' +
@@ -304,76 +316,76 @@ function HtmlGenerator(adminerAjaxConnector) {
 
         // fill first header row with caption
         tableElement.querySelector('.table-name-cell').colSpan = selectionData.headers.length;
-        tableElement.querySelector('.table-name-caption').innerText = instance._tableCaptionFromSelectionQuery(selectionQuery);
+        tableElement.querySelector('.table-name-caption').innerText = HtmlGenerator._tableCaptionFromSelectionQuery(selectionQuery);
 
         // if table is empty, create special body to notify user and stop method
         if (selectionData.body.length === 0) {
             tableElement.querySelector('tbody').innerHTML = '<tr><td><i>Empty result</i></td></tr>';
 
             // remove modify link, there's noting to modify
-            var modifyLink = tableElement.querySelector('.modify-all');
+            let modifyLink = tableElement.querySelector('.modify-all');
             modifyLink.parentNode.removeChild(modifyLink);
 
             return tableElement;
         }
 
         // create url for modifying selection from selectionQuery
-        var modifyAllUrl = adminerAjaxConnector.urlFromSelectionQuery(selectionQuery) + '&modify=1';
+        let modifyAllUrl = this.adminerAjaxConnector.urlFromSelectionQuery(selectionQuery) + '&modify=1';
         tableElement.querySelector('.modify-all').href = modifyAllUrl;
 
         // add second header with column names
-        var theadRow = tableElement.querySelector('.headers');
-        for (var i = 0; i < selectionData.headers.length; i++) {
-            var th = document.createElement('th');
+        let theadRow = tableElement.querySelector('.headers');
+        for (let i = 0; i < selectionData.headers.length; i++) {
+            let th = document.createElement('th');
             th.innerText = selectionData.headers[i];
             theadRow.appendChild(th);
         }
 
         // add rows to table body
-        var tbody = tableElement.querySelector('tbody');
-        for (var i = 0; i < selectionData.body.length; i++) {
-            var dataRow = document.createElement('tr');
+        let tbody = tableElement.querySelector('tbody');
+        for (let i = 0; i < selectionData.body.length; i++) {
+            let dataRow = document.createElement('tr');
             tbody.appendChild(dataRow);
 
             // add columns to row
-            for (var j = 0; j < selectionData.headers.length; j++) {
-                var td = document.createElement('td');
+            for (let j = 0; j < selectionData.headers.length; j++) {
+                let td = document.createElement('td');
                 dataRow.appendChild(td);
 
                 // create link for direct foreign keys, if exists
-                var foreignKey = selectionData.directForeignKeys[selectionData.headers[j]];
+                let foreignKey = selectionData.directForeignKeys[selectionData.headers[j]];
                 if (foreignKey !== undefined) {
 
                     // create link
-                    var link = instance._getTemplateAsElement('<a class="direct-foreign-key" />');
+                    let link = HtmlGenerator._getTemplateAsElement('<a class="direct-foreign-key" />');
                     link.innerText = selectionData.body[i][selectionData.headers[j]];
                     td.appendChild(link);
 
                     // create selectionQuery from information about foreign key
-                    var selectionQuery = new SelectionQuery();
+                    let selectionQuery = new SelectionQuery();
                     selectionQuery.tableName = foreignKey.targetTable;
-                    for (var q = 0; q < foreignKey.targetColumns.length; q++) {
+                    for (let q = 0; q < foreignKey.targetColumns.length; q++) {
                         selectionQuery.whereConditions[foreignKey.targetColumns[q]] = selectionData.body[i][foreignKey.sourceColumns[q]];
                     }
 
                     // generate url from selectionQuery
-                    link.href = adminerAjaxConnector.urlFromSelectionQuery(selectionQuery);
+                    link.href = this.adminerAjaxConnector.urlFromSelectionQuery(selectionQuery);
 
                 } else {
                     td.innerText = selectionData.body[i][selectionData.headers[j]];
                 }
 
                 // if there are reverse foreign keys for column
-                var reverseForeignKeys = selectionData.reverseForeignKeys[selectionData.headers[j]];
+                let reverseForeignKeys = selectionData.reverseForeignKeys[selectionData.headers[j]];
                 if (reverseForeignKeys !== undefined) {
 
                     // create container to be able to store multiple reverse foreign keys
-                    var linksContainer = instance._getTemplateAsElement('<div class="reverse-foreign-keys" style="display:none"></div>');
+                    let linksContainer = HtmlGenerator._getTemplateAsElement('<div class="reverse-foreign-keys" style="display:none"></div>');
 
                     // create button to toggle container visibility
-                    var linkToggleButton = instance._getTemplateAsElement('<a href="#!"> [R]</a>');
+                    let linkToggleButton = HtmlGenerator._getTemplateAsElement('<a href="#!"> [R]</a>');
                     linkToggleButton.addEventListener('click', function (e) {
-                        var container = e.target.parentNode.querySelector('.reverse-foreign-keys');
+                        let container = e.target.parentNode.querySelector('.reverse-foreign-keys');
                         if (container.style.display === 'none') {
                             container.style.display = 'block';
                         } else {
@@ -384,22 +396,22 @@ function HtmlGenerator(adminerAjaxConnector) {
                     td.appendChild(linkToggleButton);
 
                     // add each reverse foreign key to foreign keys container
-                    for (var k = 0; k < reverseForeignKeys.length; k++) {
+                    for (let k = 0; k < reverseForeignKeys.length; k++) {
 
                         // create link
-                        var link = instance._getTemplateAsElement('<a class="reverse-foreign-key" style="display: block;" />');
+                        let link = HtmlGenerator._getTemplateAsElement('<a class="reverse-foreign-key" style="display: block;" />');
                         link.innerText = reverseForeignKeys[k].sourceTable + '.' + reverseForeignKeys[k].sourceColumns[0];
                         td.appendChild(link);
 
                         // create selectionQuery from information about foreign key
-                        var selectionQuery = new SelectionQuery();
+                        let selectionQuery = new SelectionQuery();
                         selectionQuery.tableName = reverseForeignKeys[k].sourceTable;
-                        for (var q = 0; q < reverseForeignKeys[k].sourceColumns.length; q++) {
+                        for (let q = 0; q < reverseForeignKeys[k].sourceColumns.length; q++) {
                             selectionQuery.whereConditions[reverseForeignKeys[k].sourceColumns[q]] = selectionData.body[i][reverseForeignKeys[k].targetColumns[q]];
                         }
 
                         // generate url from selectionQuery
-                        link.href = adminerAjaxConnector.urlFromSelectionQuery(selectionQuery);
+                        link.href = this.adminerAjaxConnector.urlFromSelectionQuery(selectionQuery);
 
                         // add link to container
                         linksContainer.appendChild(link);
@@ -419,10 +431,10 @@ function HtmlGenerator(adminerAjaxConnector) {
      * @return {string}
      * @private
      */
-    instance._tableCaptionFromSelectionQuery = function (selectionQuery) {
+    static _tableCaptionFromSelectionQuery(selectionQuery) {
 
-        var whereConditionsList = [];
-        for (var conditionName in selectionQuery.whereConditions) {
+        let whereConditionsList = [];
+        for (let conditionName in selectionQuery.whereConditions) {
             if (Object.prototype.hasOwnProperty.call(selectionQuery.whereConditions, conditionName)) {
                 whereConditionsList.push(conditionName + " = " + selectionQuery.whereConditions[conditionName]);
             }
@@ -438,8 +450,8 @@ function HtmlGenerator(adminerAjaxConnector) {
      * @return {HTMLElement}
      * @private
      */
-    instance._getTemplateAsElement = function(htmlTemplate) {
-        var div = document.createElement('div');
+    static _getTemplateAsElement(htmlTemplate) {
+        let div = document.createElement('div');
         div.innerHTML = htmlTemplate;
         return div.children[0];
     }
@@ -447,42 +459,44 @@ function HtmlGenerator(adminerAjaxConnector) {
 
 /**
  * Entry point of JS part of plugin. Takes care about interaction with user (drawing HTML, handling events, ...)
- * @constructor
  */
-function AdminerTreeView() {
-    var instance = this;
+class AdminerTreeView {
 
-    /** AdminerAjaxConnector to comunicate with server side of Adminer */
-    var connector = new AdminerAjaxConnector(new URL(window.location.href.toString()));
-    /** HtmlGenerator to create more complex HTML structures */
-    var htmlGenerator = new HtmlGenerator(connector);
+    constructor () {
+        AdminerTreeView.instance = this;
+
+        /** AdminerAjaxConnector to comunicate with server side of Adminer */
+        this.connector = new AdminerAjaxConnector(new URL(window.location.href.toString()));
+
+        /** HtmlGenerator to create more complex HTML structures */
+        this.htmlGenerator = new HtmlGenerator(this.connector);
+    }
 
     /** Initializes JS part of plugin */
-    instance.init = function() {
-        instance.addTreeViewColumnToTable()
+    init() {
+        this.addTreeViewColumnToTable()
     };
 
     /** Adds column 'Tree View' to selection table. By clicking on this column modal is shown for given row of selection */
-    instance.addTreeViewColumnToTable = function() {
-
+    addTreeViewColumnToTable() {
         // for each row in table add column at the end of row
         document.querySelector('#table').querySelectorAll('tr').forEach(function (tr) {
 
             // for row with header add cell with caption (without link to modal)
             if (tr.querySelectorAll('th').length > 0) {
-                var cell = document.createElement('th');
+                let cell = document.createElement('th');
                 cell.innerText = 'Tree';
                 tr.appendChild(cell);
 
             }
             // for row with data add cell with link to open modal
             else {
-                var link = document.createElement('a');
+                let link = document.createElement('a');
                 link.href = '#!';
                 link.innerText = 'view';
-                link.addEventListener('click', instance.displayModal);
+                link.addEventListener('click', AdminerTreeView.instance.displayModal);
 
-                var cell = document.createElement('td');
+                let cell = document.createElement('td');
                 cell.appendChild(link);
 
                 tr.appendChild(cell);
@@ -494,30 +508,30 @@ function AdminerTreeView() {
      * Displays modal when modal link is clicked. Intended to be event handler. Direct call not recommended.
      * @param event Event - event of mouse clicking on modal opening link
      */
-    instance.displayModal = function(event) {
+    displayModal(event) {
         // tre to find existing modal
-        var treeModal = document.querySelector('#tree-modal');
+        let treeModal = document.querySelector('#tree-modal');
 
         // create new modal if existing not found (first time opening modal)
         if (treeModal === null) {
-            treeModal = htmlGenerator.getModalElement();
+            treeModal = AdminerTreeView.instance.htmlGenerator.getModalElement();
             document.body.appendChild(treeModal);
         }
 
         // clear content from previous use
-        var modalContent = treeModal.querySelector('.modal-content');
+        let modalContent = treeModal.querySelector('.modal-content');
         modalContent.innerHTML = '';
 
         // extract SelectionQuery from link to edit row at the beginning of row (can be found next to row checkbox)
-        var dataRowElement = event.target.parentElement.parentElement;
-        var editUrl = dataRowElement.querySelector('a.edit').href;
-        var selectionQuery = connector.selectionQueryFromUrl(editUrl);
+        let dataRowElement = event.target.parentElement.parentElement;
+        let editUrl = dataRowElement.querySelector('a.edit').href;
+        let selectionQuery = AdminerTreeView.instance.connector.selectionQueryFromUrl(editUrl);
 
         // display modal
         treeModal.style.display = 'block';
 
         // load content of selection into modal
-        instance.openSelectionIntoContainer(selectionQuery, modalContent);
+        AdminerTreeView.instance.openSelectionIntoContainer(selectionQuery, modalContent);
     };
 
     /**
@@ -525,17 +539,18 @@ function AdminerTreeView() {
      * @param selectionQuery SelectionQuery - selection to be opened
      * @param containerElement Element - DOM Element to insert loaded selection into
      */
-    instance.openSelectionIntoContainer = function(selectionQuery, containerElement) {
+    openSelectionIntoContainer(selectionQuery, containerElement) {
+        let instance = this;
 
         // load SelectionData by AJAX
-        connector.getSelectionData(selectionQuery, function(selectionData){
+        this.connector.getSelectionData(selectionQuery, function(selectionData){
 
             // create element for selection
-            var selection = document.createElement('div');
+            let selection = document.createElement('div');
             selection.className = 'selection';
 
             // create table element for given selection and put into selection element
-            var table = htmlGenerator.createTableElementFromSelectionData(selectionQuery, selectionData);
+            let table = instance.htmlGenerator.createTableElementFromSelectionData(selectionQuery, selectionData);
             selection.appendChild(table);
 
             // on close remove all selection, not just table
@@ -547,20 +562,20 @@ function AdminerTreeView() {
             });
 
             // add sub-selections box
-            var subSelectionsBox = document.createElement('div');
+            let subSelectionsBox = document.createElement('div');
             subSelectionsBox.className = 'sub-selections-box';
             subSelectionsBox.style.paddingLeft = '100px';
             selection.appendChild(subSelectionsBox);
 
             // add event handlers to load sub-selections when clicked on foreign key link
-            var tableLinks = table.querySelectorAll('a');
-            for (var i = 0; i < tableLinks.length; i++) {
+            let tableLinks = table.querySelectorAll('a');
+            for (let i = 0; i < tableLinks.length; i++) {
                 tableLinks[i].addEventListener('click', function (e) {
                     if (e.target.className === 'direct-foreign-key' || e.target.className === 'reverse-foreign-key') {
                         e.stopPropagation();
                         e.preventDefault();
 
-                        var subSection = connector.selectionQueryFromUrl(e.target.href);
+                        let subSection = instance.connector.selectionQueryFromUrl(e.target.href);
                         instance.openSelectionIntoContainer(subSection, subSelectionsBox);
                     }
                 });

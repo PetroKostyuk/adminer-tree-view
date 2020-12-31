@@ -2,17 +2,17 @@
 
 function adminer_object() {
     // required to run any plugin
-    require_once "./plugins/plugin.php";
-    require_once "./plugins/AdminerTreeViewer.php";
+    require_once "./plugin.php";
+    require_once "./AdminerTreeViewer/AdminerTreeViewer.php";
 
-    class AdminerCustomization extends AdminerPlugin{
+    class AdminerCustomization extends AdminerPlugin {
         function login($login, $password) {
             return true;
         }
     }
 
     return new AdminerCustomization([
-        new AdminerTreeViewer()
+        new AdminerTreeViewer("AdminerTreeViewer/script.js")
     ]);
 }
 

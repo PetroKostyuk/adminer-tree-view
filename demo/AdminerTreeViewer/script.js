@@ -1,20 +1,21 @@
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t;
-    return { next: verb(0), "throw": verb(1), "return": verb(2) };
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
         while (_) try {
-            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [0, t.value];
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
                 case 0: case 1: t = op; break;
                 case 4: _.label++; return { value: op[1], done: false };
@@ -34,7 +35,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 /** DTO containing information about selection we want to get from server **/
-var SelectionQuery = (function () {
+var SelectionQuery = /** @class */ (function () {
     function SelectionQuery() {
         /** name of table */
         this.tableName = '';
@@ -44,7 +45,7 @@ var SelectionQuery = (function () {
     return SelectionQuery;
 }());
 /** DTO with information about table content and foreign keys */
-var SelectionData = (function () {
+var SelectionData = /** @class */ (function () {
     function SelectionData() {
         /** array of names of columns */
         this.headers = [];
@@ -64,7 +65,7 @@ var SelectionData = (function () {
  * @param url string - current url. Used to extract DB name and table name
  * @constructor
  */
-var AdminerAjaxConnector = (function () {
+var AdminerAjaxConnector = /** @class */ (function () {
     function AdminerAjaxConnector(searchParams) {
         this.connectionUsername = searchParams.get('username');
         this.connectionDb = searchParams.get('db');
@@ -260,16 +261,16 @@ var AdminerAjaxConnector = (function () {
      */
     AdminerAjaxConnector._ajaxRequest = function (theUrl, callback) {
         return __awaiter(this, void 0, void 0, function () {
-            var response, _a, _b;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
+            var response, _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0: return [4 /*yield*/, fetch(theUrl)];
                     case 1:
-                        response = _c.sent();
+                        response = _b.sent();
                         _a = callback;
                         return [4 /*yield*/, response.text()];
                     case 2:
-                        _a.apply(void 0, [_c.sent()]);
+                        _a.apply(void 0, [_b.sent()]);
                         return [2 /*return*/];
                 }
             });
@@ -281,7 +282,7 @@ var AdminerAjaxConnector = (function () {
 /**
  * Creates HTML elements that would be too big for AdminerTreeView to create inline and keep clear readability
  */
-var HtmlGenerator = (function () {
+var HtmlGenerator = /** @class */ (function () {
     /**
      * @param adminerAjaxConnector AdminerAjaxConnector - used for creation of URL links
      */
@@ -445,7 +446,7 @@ var HtmlGenerator = (function () {
 /**
  * Entry point of JS part of plugin. Takes care about interaction with user (drawing HTML, handling events, ...)
  */
-var AdminerTreeView = (function () {
+var AdminerTreeView = /** @class */ (function () {
     function AdminerTreeView() {
         AdminerTreeView.instance = this;
         /** AdminerAjaxConnector to communicate with server side of Adminer */
@@ -468,6 +469,7 @@ var AdminerTreeView = (function () {
                 cell.innerText = 'Tree';
                 tr.appendChild(cell);
             }
+            // for row with data add cell with link to open modal
             else {
                 var link = document.createElement('a');
                 link.href = '#!';

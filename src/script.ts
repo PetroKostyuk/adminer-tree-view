@@ -39,11 +39,6 @@ class AdminerAjaxConnector {
     constructor(searchParams: URLSearchParams) {
         this.connectionUsername = searchParams.get('username');
         this.connectionDb = searchParams.get('db');
-
-        console.log("connection:")
-        console.log(searchParams)
-        console.log(this.connectionDb)
-        console.log(this.connectionUsername)
     }
 
     /**
@@ -291,7 +286,7 @@ class HtmlGenerator {
             '<div id="tree-modal" style="position:fixed; top:50px; left:50px; width:calc(100% - 100px);height:calc(100% - 100px);background:white; border:1px solid; display:none">' +
             '   <h1>' +
             '       <span class="title">Tree browser</span>' +
-            '       <a class="close" href="#!" style="float:right;">close</a>' +
+            '       <a class="close" href="#!" style="float:right;">Close</a>' +
             '   </h1>' +
             '   <div class="modal-content" style="overflow:auto; position:absolute; width:calc(100% - 20px); height:calc(100% - 162px); top:62px; left:0; margin:0 10px; padding-bottom:100px;"></div>' +
             '</div>'
@@ -575,6 +570,10 @@ class AdminerTreeView {
             table.querySelector('.close').addEventListener('click', function(e){
                 e.stopPropagation();
                 e.preventDefault();
+
+                if (selection.parentNode.className == "modal-content") {
+                    document.querySelector('#tree-modal').style.display = 'none';
+                }
 
                 selection.parentNode.removeChild(selection);
             });

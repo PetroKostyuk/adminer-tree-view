@@ -1,17 +1,18 @@
 <?php
 
+class AllowEmptyPasswordPlugin {
+    function login($login, $password) {
+        return true;
+    }
+}
+
 function adminer_object() {
-    // required to run any plugin
+    // Adminer customization allowing usage of plugins
     require_once "./plugin.php";
     require_once "./AdminerTreeViewer/AdminerTreeViewer.php";
 
-    class AdminerCustomization extends AdminerPlugin {
-        function login($login, $password) {
-            return true;
-        }
-    }
-
-    return new AdminerCustomization([
+    return new AdminerPlugin([
+        new AllowEmptyPasswordPlugin(),
         new AdminerTreeViewer("AdminerTreeViewer/script.js")
     ]);
 }

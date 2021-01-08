@@ -67,6 +67,7 @@ var SelectionData = /** @class */ (function () {
  */
 var AdminerAjaxConnector = /** @class */ (function () {
     function AdminerAjaxConnector(searchParams) {
+        this.connectionServer = searchParams.get('server');
         this.connectionUsername = searchParams.get('username');
         this.connectionDb = searchParams.get('db');
     }
@@ -190,6 +191,9 @@ var AdminerAjaxConnector = /** @class */ (function () {
      */
     AdminerAjaxConnector.prototype.urlFromSelectionQuery = function (selectionQuery) {
         var urlParts = [];
+        if (this.connectionServer != null) {
+            urlParts.push('server=' + this.connectionServer);
+        }
         urlParts.push('username=' + this.connectionUsername);
         urlParts.push('db=' + this.connectionDb);
         urlParts.push('select=' + selectionQuery.tableName);

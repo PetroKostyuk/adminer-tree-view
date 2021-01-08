@@ -33,10 +33,12 @@ class SelectionData {
  * @constructor
  */
 class AdminerAjaxConnector {
+    connectionServer: string;
     connectionUsername: string;
     connectionDb: string;
 
     constructor(searchParams: URLSearchParams) {
+        this.connectionServer = searchParams.get('server');
         this.connectionUsername = searchParams.get('username');
         this.connectionDb = searchParams.get('db');
     }
@@ -184,6 +186,9 @@ class AdminerAjaxConnector {
     urlFromSelectionQuery(selectionQuery) {
         let urlParts = [];
 
+        if (this.connectionServer != null) {
+            urlParts.push('server=' + this.connectionServer);
+        }
         urlParts.push('username=' + this.connectionUsername);
         urlParts.push('db=' + this.connectionDb);
         urlParts.push('select=' + selectionQuery.tableName);

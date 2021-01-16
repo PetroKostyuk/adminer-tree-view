@@ -13,3 +13,13 @@ This plugin consist of two files, both placed in **dist/** folder.
    * Include **plugin.php** and **AdminerTreeViewer.php** into your configuration
    * Add instance of ```AdminerTreeViewer``` into ```$plugins``` array
    * Pass url to JS file as parameter to ```AdminerTreeViewer``` constructor
+
+# usage
+
+This plugin will add new column to your tables with data:
+
+![new columns](images/new-column.png)
+
+After clicking on **Tree** link, modal window will be opened where you can start browsing related data via foreign keys:
+
+![plugin usage](images/usage-sample.png)

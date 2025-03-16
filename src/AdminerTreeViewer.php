@@ -24,10 +24,10 @@ class AdminerTreeViewer {
         if (isset($_GET['select'])) {
 
             // link to js file
-            echo script_src($this->scriptUrl);
+            echo Adminer\script_src($this->scriptUrl);
 
             // after we included script with AdminerTreeView, init it
-            echo script('(new AdminerTreeView()).init();');
+            echo Adminer\script('(new AdminerTreeView()).init();');
         }
     }
 
@@ -46,13 +46,13 @@ class AdminerTreeViewer {
     private function getForeignKeysList() {
 
         // table_status gets list of table names for current DB
-        $tables = array_column(table_status('', true), 'Name');
+        $tables = array_column(Adminer\table_status('', true), 'Name');
         $foreignKeysList = [];
 
         foreach ($tables as $table) {
 
-            // adminer() gets global instance of Adminer
-            foreach (adminer()->foreignKeys($table) as $foreignKey) {
+            // Adminer\adminer() gets global instance of Adminer
+            foreach (Adminer\adminer()->foreignKeys($table) as $foreignKey) {
 
                 $foreignKeysList[] = [
                     'sourceTable' => $table,
